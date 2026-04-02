@@ -18,13 +18,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.plcoding.personalfinancecompanion.UserInterface.DashboardScreen
-import com.plcoding.personalfinancecompanion.UserInterface.GoalsScreen
-import com.plcoding.personalfinancecompanion.UserInterface.InsightsScreen
-import com.plcoding.personalfinancecompanion.UserInterface.TransactionsScreen
+import com.plcoding.personalfinancecompanion.UserInterface.dashboard.DashboardScreen
+import com.plcoding.personalfinancecompanion.UserInterface.goals.GoalsScreen
+import com.plcoding.personalfinancecompanion.UserInterface.insights.InsightsScreen
+import com.plcoding.personalfinancecompanion.UserInterface.transactions.TransactionsScreen
+import com.plcoding.personalfinancecompanion.presentation.FinanceViewModel
 
 @Composable
-fun FinanceApp() {
+fun FinanceApp(viewModel : FinanceViewModel) {
     val navController = rememberNavController()
     val tabs = listOf(
         Screen.Dashboard,

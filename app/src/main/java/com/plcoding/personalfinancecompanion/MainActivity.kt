@@ -11,6 +11,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.plcoding.personalfinancecompanion.UserInterface.navigation.FinanceApp
+import com.plcoding.personalfinancecompanion.presentation.FinanceViewModel
+import com.plcoding.personalfinancecompanion.UserInterface.navigation.FinanceApp
 import com.plcoding.personalfinancecompanion.ui.theme.PersonalFinanceCompanionTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,7 +23,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             PersonalFinanceCompanionTheme {
-                FinanceApp()
+                val financeViewModel: FinanceViewModel = viewModel()
+                FinanceApp(financeViewModel)
             }
         }
     }
