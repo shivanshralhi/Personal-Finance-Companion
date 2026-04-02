@@ -9,55 +9,83 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import com.plcoding.personalfinancecompanion.Domain.Model.SavingsGoal
-import java.time.YearMonth
-class FinanceViewModel : ViewModel() {
+import kotlinx.coroutines.flow.combine
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 
-    private val _uiState = MutableStateFlow(
-        FinanceUiState(
-            transactions = listOf(
-                Transaction(amount = 2500.0, type = TransactionType.INCOME, category = "Salary", date = LocalDate.now()),
-                Transaction(amount = 25.5, type = TransactionType.EXPENSE, category = "Food", date = LocalDate.now(), notes = "Lunch"),
-                Transaction(amount = 60.0, type = TransactionType.EXPENSE, category = "Transport", date = LocalDate.now())
-            )
+import com.plcoding.personalfinancecompanion.Data.Repository.FinanceRepository
+import java.time.YearMonth
+class FinanceViewModel(
+    private val repository: FinanceRepository
+) : ViewModel() {
+
+    private val filtersState = MutableStateFlow(
+        FiltersState(
+            searchQuery = "",
+            selectedTypeFilter = "ALL"
         )
     )
+
+    private val _uiState = MutableStateFlow(FinanceUiState())
     val uiState: StateFlow<FinanceUiState> = _uiState.asStateFlow()
 
+    init {
+        observeFinanceData()
+    }
+
+    private fun observeFinanceData() {
+        viewModelScope.launch {
+            combine(
+                repository.observeTransactions(),
+                repository.observeSavingsGoal(YearMonth.now()),
+                filtersState
+            ) { transactions, goal, filters ->
+                FinanceUiState(
+                    transactions = transactions,
+                    savingsGoal = goal,
+                    searchQuery = filters.searchQuery,
+                    selectedTypeFilter = filters.selectedTypeFilter,
+                    isLoading = false,
+                    errorMessage = null
+                )
+            }.collect { newState ->
+                _uiState.value = newState
+            }
+        }
+    }
+
     fun addTransaction(transaction: Transaction) {
-        _uiState.update { it.copy(transactions = listOf(transaction) + it.transactions) }
+        performDbAction {
+            repository.upsertTransaction(transaction)
+        }
     }
 
     fun updateTransaction(updatedTransaction: Transaction) {
-        _uiState.update {
-            it.copy(
-                transactions = it.transactions.map { transaction ->
-                    if (transaction.id == updatedTransaction.id) {
-                        updatedTransaction
-                    } else {
-                        transaction
-                    }
-                }
-            )
+        performDbAction {
+            repository.upsertTransaction(updatedTransaction)
         }
     }
 
 
     fun deleteTransaction(id: String) {
-        _uiState.update { it.copy(transactions = it.transactions.filterNot { tx -> tx.id == id }) }
+        performDbAction {
+            repository.deleteTransaction(id)
+        }
     }
 
     fun updateTypeFilter(filter: String) {
-        _uiState.update { it.copy(selectedTypeFilter = filter) }
+        filtersState.update { it.copy(selectedTypeFilter = filter) }
     }
 
     fun updateSearchQuery(query: String) {
-        _uiState.update { it.copy(searchQuery = query) }
+        filtersState.update { it.copy(searchQuery = query) }
     }
 
     fun upsertMonthlySavingsGoal(targetAmount: Double) {
-        _uiState.update {
-            it.copy(
-                savingsGoal = SavingsGoal(
+        performDbAction {
+            repository.upsertSavingsGoal(
+                SavingsGoal(
                     targetAmount = targetAmount,
                     month = YearMonth.now()
                 )
@@ -66,6 +94,42 @@ class FinanceViewModel : ViewModel() {
     }
 
     fun clearSavingsGoal() {
-        _uiState.update { it.copy(savingsGoal = null) }
+        performDbAction {
+            repository.deleteSavingsGoal(YearMonth.now())
+        }
     }
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    private fun performDbAction(action: suspend () -> Unit) {
+        viewModelScope.launch {
+            runCatching { action() }
+                .onFailure { throwable ->
+                    _uiState.update {
+                        it.copy(errorMessage = throwable.message ?: "Something went wrong. Please try again.")
+                    }
+                }
+        }
+    }
+
+    data class FiltersState(
+        val searchQuery: String,
+        val selectedTypeFilter: String
+    )
+
+    companion object {
+        fun factory(repository: FinanceRepository): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    if (modelClass.isAssignableFrom(FinanceViewModel::class.java)) {
+                        return FinanceViewModel(repository) as T
+                    }
+                    throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+                }
+            }
+        }
+    }
+
 }

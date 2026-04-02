@@ -12,7 +12,9 @@ data class FinanceUiState(
     val transactions: List<Transaction> = emptyList(),
     val searchQuery: String = "",
     val selectedTypeFilter: String = "ALL",
-    val savingsGoal: SavingsGoal? = null
+    val savingsGoal: SavingsGoal? = null,
+    val isLoading: Boolean = true,
+    val errorMessage: String? = null
 ) {
     val visibleTransactions: List<Transaction>
         get() = transactions.filter { transaction ->
