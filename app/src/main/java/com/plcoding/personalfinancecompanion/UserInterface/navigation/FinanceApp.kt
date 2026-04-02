@@ -1,7 +1,7 @@
 package com.plcoding.personalfinancecompanion.UserInterface.navigation
 
 
-
+import androidx.compose.runtime.collectAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Flag
@@ -14,6 +14,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -25,8 +26,9 @@ import com.plcoding.personalfinancecompanion.UserInterface.transactions.Transact
 import com.plcoding.personalfinancecompanion.presentation.FinanceViewModel
 
 @Composable
-fun FinanceApp(viewModel : FinanceViewModel) {
+fun FinanceApp(viewModel: FinanceViewModel) {
     val navController = rememberNavController()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val tabs = listOf(
         Screen.Dashboard,
         Screen.Transactions,
@@ -68,8 +70,23 @@ fun FinanceApp(viewModel : FinanceViewModel) {
             navController = navController,
             startDestination = Screen.Dashboard.route
         ) {
-            composable(Screen.Dashboard.route) { DashboardScreen(padding) }
-            composable(Screen.Transactions.route) { TransactionsScreen(padding) }
+            composable(Screen.Dashboard.route) {
+                DashboardScreen(
+                    padding = padding,
+                    uiState = uiState
+                )
+            }
+            composable(Screen.Transactions.route) {
+                TransactionsScreen(
+                    padding = padding,
+                    uiState = uiState,
+                    onSearchChange = viewModel::updateSearchQuery,
+                    onTypeFilterChange = viewModel::updateTypeFilter,
+                    onAddTransaction = viewModel::addTransaction,
+                    onDeleteTransaction = viewModel::deleteTransaction,
+                    onUpdateTransaction = viewModel::updateTransaction
+                )
+            }
             composable(Screen.Insights.route) { InsightsScreen(padding) }
             composable(Screen.Goals.route) { GoalsScreen(padding) }
         }

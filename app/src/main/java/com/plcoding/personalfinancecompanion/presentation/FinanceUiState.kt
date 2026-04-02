@@ -8,6 +8,15 @@ data class FinanceUiState(
     val searchQuery: String = "",
     val selectedTypeFilter: String = "ALL"
 ) {
+    val visibleTransactions: List<Transaction>
+        get() = transactions.filter { transaction ->
+            val matchesSearch = searchQuery.isBlank() ||
+                    transaction.category.contains(searchQuery, ignoreCase = true) ||
+                    transaction.notes.contains(searchQuery, ignoreCase = true)
+
+            val matchesType = selectedTypeFilter == "ALL" || transaction.type.name == selectedTypeFilter
+            matchesSearch && matchesType
+        }
     val totalIncome: Double
         get() = transactions.filter { it.type.name == "INCOME" }.sumOf { it.amount }
 

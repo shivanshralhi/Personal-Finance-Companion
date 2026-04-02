@@ -26,8 +26,27 @@ class FinanceViewModel : ViewModel() {
         _uiState.update { it.copy(transactions = listOf(transaction) + it.transactions) }
     }
 
+    fun updateTransaction(updatedTransaction: Transaction) {
+        _uiState.update {
+            it.copy(
+                transactions = it.transactions.map { transaction ->
+                    if (transaction.id == updatedTransaction.id) {
+                        updatedTransaction
+                    } else {
+                        transaction
+                    }
+                }
+            )
+        }
+    }
+
+
     fun deleteTransaction(id: String) {
         _uiState.update { it.copy(transactions = it.transactions.filterNot { tx -> tx.id == id }) }
+    }
+
+    fun updateTypeFilter(filter: String) {
+        _uiState.update { it.copy(selectedTypeFilter = filter) }
     }
 
     fun updateSearchQuery(query: String) {
