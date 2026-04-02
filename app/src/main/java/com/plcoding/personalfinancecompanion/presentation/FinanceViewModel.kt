@@ -8,7 +8,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-
+import com.plcoding.personalfinancecompanion.Domain.Model.SavingsGoal
+import java.time.YearMonth
 class FinanceViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -51,5 +52,20 @@ class FinanceViewModel : ViewModel() {
 
     fun updateSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    fun upsertMonthlySavingsGoal(targetAmount: Double) {
+        _uiState.update {
+            it.copy(
+                savingsGoal = SavingsGoal(
+                    targetAmount = targetAmount,
+                    month = YearMonth.now()
+                )
+            )
+        }
+    }
+
+    fun clearSavingsGoal() {
+        _uiState.update { it.copy(savingsGoal = null) }
     }
 }

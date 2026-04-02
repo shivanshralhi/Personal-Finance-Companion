@@ -88,7 +88,14 @@ fun FinanceApp(viewModel: FinanceViewModel) {
                 )
             }
             composable(Screen.Insights.route) { InsightsScreen(padding) }
-            composable(Screen.Goals.route) { GoalsScreen(padding) }
+            composable(Screen.Goals.route) {
+                GoalsScreen(
+                    padding = padding,
+                    uiState = uiState,
+                    onSaveGoal = viewModel::upsertMonthlySavingsGoal,
+                    onDeleteGoal = viewModel::clearSavingsGoal
+                )
+            }
         }
     }
 }
