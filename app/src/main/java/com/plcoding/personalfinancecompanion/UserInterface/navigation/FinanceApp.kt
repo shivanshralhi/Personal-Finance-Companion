@@ -87,7 +87,12 @@ fun FinanceApp(viewModel: FinanceViewModel) {
                     onUpdateTransaction = viewModel::updateTransaction
                 )
             }
-            composable(Screen.Insights.route) { InsightsScreen(padding) }
+            composable(Screen.Insights.route) {
+                InsightsScreen(
+                    padding = padding,
+                    uiState = uiState
+                )
+            }
             composable(Screen.Goals.route) {
                 GoalsScreen(
                     padding = padding,
