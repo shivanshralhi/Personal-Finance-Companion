@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.unit.dp
 import com.plcoding.personalfinancecompanion.presentation.FinanceUiState
@@ -33,18 +34,29 @@ import com.plcoding.personalfinancecompanion.Domain.Model.TransactionType
 import kotlin.math.max
 
 @Composable
-fun DashboardScreen(padding: PaddingValues,
-                    uiState: FinanceUiState,
-                    savingsGoal: Double = 5000.0) {
+fun DashboardScreen(
+    padding: PaddingValues,
+    uiState: FinanceUiState
+) {
+    if (uiState.isLoading) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
     val currentBalance = uiState.currentBalance
     val totalIncome = uiState.totalIncome
     val totalExpense = uiState.totalExpense
 
-    val savingsProgress = if (savingsGoal > 0) {
-        (currentBalance / savingsGoal).coerceIn(0.0, 1.0).toFloat()
-    } else {
-        0f
-    }
+    val goalTargetAmount = uiState.savingsGoal?.targetAmount
+    val savingsProgress = uiState.savingsProgress
 
     val categorySpending = uiState.transactions
         .filter { it.type == TransactionType.EXPENSE }
@@ -97,14 +109,22 @@ fun DashboardScreen(padding: PaddingValues,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text("Savings Goal", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = "${formatAmount(currentBalance)} / ${formatAmount(savingsGoal)}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                LinearProgressIndicator(
-                    progress = { savingsProgress },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (goalTargetAmount == null) {
+                    Text(
+                        text = "Set a monthly goal to track your savings progress.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        text = "${formatAmount(uiState.currentMonthSavings)} / ${formatAmount(goalTargetAmount)}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    LinearProgressIndicator(
+                        progress = { savingsProgress },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
 
