@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.plcoding.personalfinancecompanion"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.plcoding.personalfinancecompanion"
