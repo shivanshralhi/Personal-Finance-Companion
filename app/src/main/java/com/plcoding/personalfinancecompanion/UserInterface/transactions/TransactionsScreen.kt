@@ -1,6 +1,13 @@
 package com.plcoding.personalfinancecompanion.UserInterface.transactions
 
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,10 +21,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,15 +43,6 @@ import com.plcoding.personalfinancecompanion.presentation.FinanceUiState
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import java.util.UUID
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
-import androidx.compose.animation.animateContentSize
-
 
 @Composable
 fun TransactionsScreen(
@@ -60,6 +61,23 @@ fun TransactionsScreen(
     var selectedType by rememberSaveable { mutableStateOf(TransactionType.EXPENSE) }
     var editingTransactionId by rememberSaveable { mutableStateOf<String?>(null) }
 
+    fun resetForm() {
+        amount = ""
+        category = ""
+        date = LocalDate.now().toString()
+        notes = ""
+        selectedType = TransactionType.EXPENSE
+        editingTransactionId = null
+    }
+
+    LaunchedEffect(uiState.transactions, editingTransactionId) {
+        val currentEditingId = editingTransactionId ?: return@LaunchedEffect
+        val isEditedItemStillPresent = uiState.transactions.any { it.id == currentEditingId }
+        if (!isEditedItemStillPresent) {
+            resetForm()
+        }
+    }
+
     val amountError = remember(amount) {
         when {
             amount.isBlank() -> "Amount is required"
@@ -68,9 +86,11 @@ fun TransactionsScreen(
             else -> null
         }
     }
+
     val categoryError = remember(category) {
         if (category.isBlank()) "Category is required" else null
     }
+
     val dateError = remember(date) {
         if (parseDateOrNull(date) == null) "Use YYYY-MM-DD format" else null
     }
@@ -113,10 +133,12 @@ fun TransactionsScreen(
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("ALL", "INCOME", "EXPENSE").forEach { filter ->
-                    Button(onClick = { onTypeFilterChange(filter) },
+                    Button(
+                        onClick = { onTypeFilterChange(filter) },
                         modifier = Modifier
                             .sizeIn(minHeight = 48.dp)
-                            .semantics { contentDescription = "Filter $filter transactions" }) {
+                            .semantics { contentDescription = "Filter $filter transactions" }
+                    ) {
                         val selectedPrefix = if (uiState.selectedTypeFilter == filter) "✓ " else ""
                         Text("$selectedPrefix$filter")
                     }
@@ -138,6 +160,7 @@ fun TransactionsScreen(
                         isError = amountError != null,
                         modifier = Modifier.fillMaxWidth()
                     )
+
                     OutlinedTextField(
                         value = category,
                         onValueChange = { category = it },
@@ -146,6 +169,7 @@ fun TransactionsScreen(
                         isError = categoryError != null,
                         modifier = Modifier.fillMaxWidth()
                     )
+
                     OutlinedTextField(
                         value = date,
                         onValueChange = { date = it },
@@ -154,6 +178,7 @@ fun TransactionsScreen(
                         isError = dateError != null,
                         modifier = Modifier.fillMaxWidth()
                     )
+
                     OutlinedTextField(
                         value = notes,
                         onValueChange = { notes = it },
@@ -168,6 +193,7 @@ fun TransactionsScreen(
                         ) {
                             Text("Income")
                         }
+
                         Button(
                             onClick = { selectedType = TransactionType.EXPENSE },
                             modifier = Modifier.sizeIn(minHeight = 48.dp)
@@ -175,6 +201,7 @@ fun TransactionsScreen(
                             Text("Expense")
                         }
                     }
+
                     AnimatedContent(
                         targetState = selectedType,
                         transitionSpec = {
@@ -183,7 +210,8 @@ fun TransactionsScreen(
                         },
                         label = "selectedTypeTransition"
                     ) { type ->
-                        Text("Selected: ${type.name}")}
+                        Text("Selected: ${type.name}")
+                    }
 
                     Button(
                         onClick = {
@@ -202,12 +230,7 @@ fun TransactionsScreen(
                                 onUpdateTransaction(tx)
                             }
 
-                            amount = ""
-                            category = ""
-                            date = LocalDate.now().toString()
-                            notes = ""
-                            selectedType = TransactionType.EXPENSE
-                            editingTransactionId = null
+                            resetForm()
                         },
                         enabled = isValidInput,
                         modifier = Modifier
@@ -217,13 +240,27 @@ fun TransactionsScreen(
                     ) {
                         Text(if (editingTransactionId == null) "Add Transaction" else "Update Transaction")
                     }
+
+                    if (editingTransactionId != null) {
+                        OutlinedButton(
+                            onClick = ::resetForm,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .sizeIn(minHeight = 48.dp)
+                                .semantics { contentDescription = "Cancel transaction edit" }
+                        ) {
+                            Text("Cancel Edit")
+                        }
+                    }
                 }
             }
         }
 
         when {
             uiState.isLoading -> item {
-                CircularProgressIndicator(modifier = Modifier.semantics { contentDescription = "Loading transactions" })
+                CircularProgressIndicator(
+                    modifier = Modifier.semantics { contentDescription = "Loading transactions" }
+                )
             }
 
             uiState.visibleTransactions.isEmpty() -> item {
@@ -267,13 +304,18 @@ private fun TransactionItem(
             .fillMaxWidth()
             .animateContentSize()
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
             Text("${transaction.type.name}: ${transaction.amount}")
             Text("Category: ${transaction.category}")
             Text("Date: ${transaction.date}")
+
             if (transaction.notes.isNotBlank()) {
                 Text("Notes: ${transaction.notes}")
             }
+
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onEdit, modifier = Modifier.sizeIn(minHeight = 48.dp)) { Text("Edit") }
                 Button(onClick = onDelete, modifier = Modifier.sizeIn(minHeight = 48.dp)) { Text("Delete") }
