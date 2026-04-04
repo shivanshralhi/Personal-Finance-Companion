@@ -33,6 +33,14 @@ import com.plcoding.personalfinancecompanion.presentation.FinanceUiState
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import java.util.UUID
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.animateContentSize
 
 
 @Composable
@@ -167,7 +175,15 @@ fun TransactionsScreen(
                             Text("Expense")
                         }
                     }
-                    Text("Selected: ${selectedType.name}")
+                    AnimatedContent(
+                        targetState = selectedType,
+                        transitionSpec = {
+                            (slideInVertically { it / 3 } + fadeIn()) togetherWith
+                                    (slideOutVertically { -it / 3 } + fadeOut())
+                        },
+                        label = "selectedTypeTransition"
+                    ) { type ->
+                        Text("Selected: ${type.name}")}
 
                     Button(
                         onClick = {
@@ -216,18 +232,24 @@ fun TransactionsScreen(
 
             else -> {
                 items(uiState.visibleTransactions, key = { it.id }) { transaction ->
-                    TransactionItem(
-                        transaction = transaction,
-                        onDelete = { onDeleteTransaction(transaction.id) },
-                        onEdit = {
-                            editingTransactionId = transaction.id
-                            amount = transaction.amount.toString()
-                            category = transaction.category
-                            date = transaction.date.toString()
-                            notes = transaction.notes
-                            selectedType = transaction.type
-                        }
-                    )
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn() + slideInVertically(initialOffsetY = { it / 4 }),
+                        exit = fadeOut() + slideOutVertically(targetOffsetY = { it / 4 })
+                    ) {
+                        TransactionItem(
+                            transaction = transaction,
+                            onDelete = { onDeleteTransaction(transaction.id) },
+                            onEdit = {
+                                editingTransactionId = transaction.id
+                                amount = transaction.amount.toString()
+                                category = transaction.category
+                                date = transaction.date.toString()
+                                notes = transaction.notes
+                                selectedType = transaction.type
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -240,7 +262,11 @@ private fun TransactionItem(
     onDelete: () -> Unit,
     onEdit: () -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize()
+    ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("${transaction.type.name}: ${transaction.amount}")
             Text("Category: ${transaction.category}")
