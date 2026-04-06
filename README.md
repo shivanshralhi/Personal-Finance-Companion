@@ -1,4 +1,4 @@
-# Personal-Finance-Companion
+
 # Personal Finance Companion
 
 Personal Finance Companion is an Android app built with **Kotlin + Jetpack Compose** to help users track transactions, monitor monthly savings goals, and review spending insights in one place.
