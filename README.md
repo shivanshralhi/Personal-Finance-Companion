@@ -243,7 +243,4 @@ cd Personal-Finance-Companion
 
 ---
 
-If you'd like, I can also generate:
-1) a short end-user README,
-2) a contributor-focused `CONTRIBUTING.md`, and
-3) architecture diagrams (Mermaid) for the ViewModel/data flow.
+
